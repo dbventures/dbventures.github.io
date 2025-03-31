@@ -58,7 +58,7 @@ string_5d_ago = (today - relativedelta(days=5)).strftime('%Y-%m-%d')
 # In[41]:
 
 #day_list = [-5, -6, -8, -10, -12, -15, -18, -20, -22, -25, -28, -30, -35]
-day_list = [-1, -2, -5, -10, -15]
+day_list = [-1, -5, -10, -15. -18]
 #day_list = range(-1, -300, -1)
 
 for day in day_list:
@@ -1369,8 +1369,11 @@ for day in day_list:
         current_time = "<script>var date = new Date('" + dt_string + " " + timezone_string + "'); document.getElementById('timestring').innerHTML += date.toString()</script>"
         htmlLines = []
         for textLine in pprint.pformat(flip_dict).splitlines():
-          if textLine.split("':")[0].split("'")[1] in stock_list_snp:
-            htmlLines.append('<br/>%s' % textLine) # or something even nicer
+            try:
+              if textLine.split("':")[0].split("'")[1] in stock_list_snp:
+                htmlLines.append('<br/>%s' % textLine) # or something even nicer
+            except:
+                 htmlLines.append('<br/>Might be error%s ' % textLine) # or something even nicer
         htmlText = '\n'.join(htmlLines)
     
         f.write(updated + current_time + htmlText)
@@ -1421,8 +1424,11 @@ for day in day_list:
         current_time = "<script>var date = new Date('" + dt_string + " " + timezone_string + "'); document.getElementById('timestring').innerHTML += date.toString()</script>"
         htmlLines = []
         for textLine in pprint.pformat(flip_dict).splitlines():
-          if textLine.split("':")[0].split("'")[1] in crypto_list:
-            htmlLines.append('<br/>%s' % textLine) # or something even nicer
+            try:
+              if textLine.split("':")[0].split("'")[1] in crypto_list:
+                htmlLines.append('<br/>%s' % textLine) # or something even nicer
+            except:
+                 htmlLines.append('<br/>Might be error%s ' % textLine) # or something even nicer
         htmlText = '\n'.join(htmlLines)
     
         f.write(updated + current_time + htmlText)
