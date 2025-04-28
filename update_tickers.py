@@ -35,6 +35,21 @@ import pickle
 import os
 import requests
 
+# for discord
+import kaleido
+
+DISCORD_WEBHOOK_TOKEN = os.getenv("DISCORD_WEBHOOK_TOKEN")
+DISCORD_WEBHOOK_TOKEN2 = os.getenv("DISCORD_WEBHOOK_TOKEN2")
+
+if not DISCORD_WEBHOOK_TOKEN:
+    raise ValueError("No DISCORD_WEBHOOK_TOKEN found in environment variables!")
+
+if not DISCORD_WEBHOOK_TOKEN2:
+    raise ValueError("No DISCORD_WEBHOOK_TOKEN2 found in environment variables!")
+
+DISCORD_WEBHOOK_URL = f"https://discord.com/api/webhooks/{DISCORD_WEBHOOK_TOKEN}"
+DISCORD_WEBHOOK_URL2 = f"https://discord.com/api/webhooks/{DISCORD_WEBHOOK_TOKEN2}"
+
 # For parsing financial statements data from financialmodelingprep api
 from urllib.request import urlopen
 import json
@@ -54,11 +69,40 @@ string_4y_ago = (today - relativedelta(years=4)).strftime('%Y-%m-%d')
 string_5d_ago = (today - relativedelta(days=5)).strftime('%Y-%m-%d')
 
 
+# send to discord later
+file_paths = {
+    "US Market": "interested_tickers_days_-1.html",
+    "HK Market": "interested_tickers_hk_days_-1.html",
+    "Crypto Market": "interested_tickers_crypto_days_-1.html",
+}
+
+us_text = ''
+hk_text = ''
+crypto_text = ''
+
+signal_texts = {
+    "US Market": us_text,
+    "HK Market": hk_text,
+    "Crypto Market": crypto_text,
+}
+
+image_folder_paths = {
+    "US Market": "us_images",
+    "HK Market": "hk_images",
+    "Crypto Market": "crypto_images",
+}
+
+for folder in image_folder_paths.values():
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+
+
 
 # In[41]:
 
 #day_list = [-5, -6, -8, -10, -12, -15, -18, -20, -22, -25, -28, -30, -35]
-day_list = [-1, -5, -10, -15. -18]
+#day_list = [-1, -5, -10, -15. -18]
+day_list = [-1]
 #day_list = range(-1, -300, -1)
 
 for day in day_list:
@@ -972,7 +1016,7 @@ for day in day_list:
 
     # can consider to append df if match also, so no need to scrape again
     # loop through each symbol
-    for i, ticker in enumerate(stock_list_all): # i is mainly for printing only
+    for i, ticker in enumerate(stock_list_all[:1000]): # i is mainly for printing only
       #ticker = ticker.replace(".", "-")
       try:
         df = get_stock_price(ticker, freq = freq)
@@ -1267,6 +1311,8 @@ for day in day_list:
         for textLine in pprint.pformat(flip_dict).splitlines():
           if '.HK' not in textLine:
               htmlLines.append('<br/>%s' % textLine) # or something even nicer
+              if day == -1:
+                  signal_texts["US Market"] += ('\n' + textLine) # or something even nicer
         htmlText = '\n'.join(htmlLines)
     
         f.write(updated + current_time + htmlText)
@@ -1303,7 +1349,10 @@ for day in day_list:
                           'n_shares', 'more_than_atr', 'value', 'strategy']]
                       htmlText3 = df_html.to_html()
                       f.write(htmlText2 + htmlText3)
-                      f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html fi
+                      f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html
+                      if day == -1:
+                          fig.write_image(f"{image_folder_paths['US Market']}/{ticker}_{strategy}.png")
+                      
               except Exception as e:
                     print(e)
                     
@@ -1316,9 +1365,12 @@ for day in day_list:
         # hence Javascript code is written below to convert to client timezone before printing it on
         current_time = "<script>var date = new Date('" + dt_string + " " + timezone_string + "'); document.getElementById('timestring').innerHTML += date.toString()</script>"
         htmlLines = []
+        hk_text = ''
         for textLine in pprint.pformat(flip_dict).splitlines():
           if '.HK' in textLine:
               htmlLines.append('<br/>%s' % textLine) # or something even nicer
+              if day == -1:
+                  signal_texts["HK Market"] += ('\n' + textLine) # or something even nicer
         htmlText = '\n'.join(htmlLines)
     
         f.write(updated + current_time + htmlText)
@@ -1355,7 +1407,9 @@ for day in day_list:
                           'n_shares', 'more_than_atr', 'value', 'strategy']]
                       htmlText3 = df_html.to_html()
                       f.write(htmlText2 + htmlText3)
-                      f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html fi
+                      f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html
+                      if day == -1:
+                         fig.write_image(f"{image_folder_paths['HK Market']}/{ticker}_{strategy}.png")
               except Exception as e:
                       print(e)
                     
@@ -1410,7 +1464,7 @@ for day in day_list:
                           'n_shares', 'more_than_atr', 'value', 'strategy']]
                       htmlText3 = df_html.to_html()
                       f.write(htmlText2 + htmlText3)
-                      f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html fi
+                      f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html
               except Exception as e:
                     print(e)
 
@@ -1423,10 +1477,13 @@ for day in day_list:
         # hence Javascript code is written below to convert to client timezone before printing it on
         current_time = "<script>var date = new Date('" + dt_string + " " + timezone_string + "'); document.getElementById('timestring').innerHTML += date.toString()</script>"
         htmlLines = []
+        crypto_text = ''
         for textLine in pprint.pformat(flip_dict).splitlines():
             try:
               if textLine.split("':")[0].split("'")[1] in crypto_list:
                 htmlLines.append('<br/>%s' % textLine) # or something even nicer
+                if day == -1:
+                    signal_texts["Crypto Market"] += ('\n' + textLine) # or something even nicer
             except:
                  htmlLines.append('<br/>Might be error%s ' % textLine) # or something even nicer
         htmlText = '\n'.join(htmlLines)
@@ -1465,7 +1522,58 @@ for day in day_list:
                           'n_shares', 'more_than_atr', 'value', 'strategy']]
                       htmlText3 = df_html.to_html()
                       f.write(htmlText2 + htmlText3)
-                      f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html fi
+                      f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html
+                      if day == -1:
+                         fig.write_image(f"{image_folder_paths['Crypto Market']}/{ticker}_{strategy}.png")
               except Exception as e:
                     print(e)
+
+
+
+for market, file_path in file_paths.items():
+    # Loop through the image files in the folder and send them
+    image_folder_path = image_folder_paths[market]
+    # List all files in the folder and filter to get only image files
+    image_files = [f for f in os.listdir(image_folder_path) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))]
+
+    # with images
+    # Prepare the payload (message)
+    payload = {
+        "content": f"Signal for the {market}.\nFor interactive charts, please DOWNLOAD the HTML file that will be sent at the END of all the signal charts and open in your browser to view! :)",
+    }
+    for index, image_file in enumerate(image_files):
+        file_path = os.path.join(image_folder_path, image_file)
+        
+        with open(file_path, "rb") as img:
+            files = {
+                "file": (image_file, img, "image/jpeg" if image_file.lower().endswith(".jpg") else "image/png")
+            }
+            #files[f"file{index + 1}"] = (image_file, img, "image/jpeg" if image_file.lower().endswith(".jpg") else "image/png")
+        
+            # Send the image files via POST request
+            response = requests.post(DISCORD_WEBHOOK_URL2, data=payload, files=files)
     
+            # Check the response
+            if response.status_code == 200:
+                print(f"Successfully sent {image_file}")
+            else:
+                print(f"Failed to send {image_file}. Status code: {response.status_code}, response: {response.text}")
+
+    # html only
+    # Open the file in binary mode
+    with open(file_path, "rb") as f:
+        files = {
+            "file": (file_path, f, "text/html")
+        }
+        payload = {
+            "content": f"These are the current signals for the {market}.\nPlease DOWNLOAD the HTML file and open in your browser to view! :)\n{signal_texts[market]}",
+            "flags": 4096  # Suppress embeds
+        }
+        response = requests.post(DISCORD_WEBHOOK_URL, data=payload, files=files)
+        response = requests.post(DISCORD_WEBHOOK_URL2, data=payload, files=files)
+        
+    # Check the response
+    if response.status_code == 200:
+        print(f"Successfully sent the file for {market}!")
+    else:
+        print(f"Failed to send file for {market}! Status code: {response.status_code}, response: {response.text}")
