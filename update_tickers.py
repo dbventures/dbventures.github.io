@@ -36,7 +36,8 @@ import os
 import requests
 
 # for discord
-import kaleido
+#import kaleido
+import plotly.io as pio
 
 DISCORD_WEBHOOK_TOKEN = os.getenv("DISCORD_WEBHOOK_TOKEN")
 DISCORD_WEBHOOK_TOKEN2 = os.getenv("DISCORD_WEBHOOK_TOKEN2")
@@ -1016,7 +1017,7 @@ for day in day_list:
 
     # can consider to append df if match also, so no need to scrape again
     # loop through each symbol
-    for i, ticker in enumerate(stock_list_all[:1000]): # i is mainly for printing only
+    for i, ticker in enumerate(stock_list_all[:2000]): # i is mainly for printing only
       #ticker = ticker.replace(".", "-")
       try:
         df = get_stock_price(ticker, freq = freq)
@@ -1351,7 +1352,8 @@ for day in day_list:
                       f.write(htmlText2 + htmlText3)
                       f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html
                       if day == -1:
-                          fig.write_image(f"{image_folder_paths['US Market']}/{ticker}_{strategy}.png")
+                          pio.write_image(fig, f"{image_folder_paths['US Market']}/{ticker}_{strategy}.png", width=1200, height=800)
+                          #fig.write_image(f"{image_folder_paths['US Market']}/{ticker}_{strategy}.png")
                       
               except Exception as e:
                     print(e)
@@ -1409,7 +1411,8 @@ for day in day_list:
                       f.write(htmlText2 + htmlText3)
                       f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html
                       if day == -1:
-                         fig.write_image(f"{image_folder_paths['HK Market']}/{ticker}_{strategy}.png")
+                          pio.write_image(fig, f"{image_folder_paths['HK Market']}/{ticker}_{strategy}.png", width=1200, height=800)
+                          #fig.write_image(f"{image_folder_paths['HK Market']}/{ticker}_{strategy}.png")
               except Exception as e:
                       print(e)
                     
@@ -1524,7 +1527,8 @@ for day in day_list:
                       f.write(htmlText2 + htmlText3)
                       f.write(fig.to_html(full_html=False, include_plotlyjs='cdn')) # write the fig created above into the html
                       if day == -1:
-                         fig.write_image(f"{image_folder_paths['Crypto Market']}/{ticker}_{strategy}.png")
+                          pio.write_image(fig, f"{image_folder_paths['Crypto Market']}/{ticker}_{strategy}.png", width=1200, height=800)
+                          #fig.write_image(f"{image_folder_paths['Crypto Market']}/{ticker}_{strategy}.png")
               except Exception as e:
                     print(e)
 
@@ -1546,7 +1550,7 @@ for market, file_path in file_paths.items():
         
         with open(file_path, "rb") as img:
             files = {
-                "file": (image_file, img, "image/jpeg" if image_file.lower().endswith(".jpg") else "image/png")
+                "file": (file_path, img, "image/jpeg" if image_file.lower().endswith(".jpg") else "image/png")
             }
             #files[f"file{index + 1}"] = (image_file, img, "image/jpeg" if image_file.lower().endswith(".jpg") else "image/png")
         
